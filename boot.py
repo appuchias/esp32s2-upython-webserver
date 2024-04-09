@@ -5,6 +5,8 @@ import ntptime
 import webrepl
 from machine import RTC, Pin
 
+CONNECTION_TIMEOUT = 60 # seconds
+
 webrepl.start()
 
 led = Pin(15, Pin.OUT)
@@ -26,21 +28,23 @@ def do_connect(ssid, key):
         print("connecting to network...")
         wlan.connect(ssid, key)
 
-        while not wlan.isconnected():
-            pass
+        i = 0
+        while not wlan.isconnected() and i <= CONNECTION_TIMEOUT // 2:
+            sleep(500)
+            i += 1
 
-    print("network config:", wlan.ifconfig())
+    print("(IP, NM, GW, DNS):", wlan.ifconfig())
 
     ntptime.settime()
     print(RTC().datetime())
 
-    ip, _, _, _ = wlan.ifconfig()
+    ip = wlan.ifconfig()[0]
     last = ip.split(".")[-1]
     for _ in range(2):
         for i in [int(n) for n in last]:
             blink(led, i, 150)
             sleep(500)
-        sleep(2000)
+        sleep(5000)
 
 
 with open("config.txt") as f:
