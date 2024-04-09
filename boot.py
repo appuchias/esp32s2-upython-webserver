@@ -5,13 +5,10 @@ import ntptime
 import webrepl
 from machine import RTC, Pin
 
-CONNECTION_TIMEOUT = 60 # seconds
-
-webrepl.start()
-
-led = Pin(15, Pin.OUT)
+CONNECTION_TIMEOUT = 30  # seconds
 
 
+# Blink the LED on the board
 def blink(pin, count=1, delay=1000):
     for _ in range(count):
         pin.on()
@@ -20,39 +17,68 @@ def blink(pin, count=1, delay=1000):
         sleep(delay)
 
 
-def do_connect(ssid, key):
+# Blink the LED on the board in a sequence
+def seq_blink(pin, seq, duration, delay):
+    if isinstance(seq, str):
+        seq = [int(n) for n in seq]
+
+    for i in seq:
+        blink(pin, i, duration)
+        sleep(delay)
+
+
+# Connect to a network from the known list
+def start_network(connections):
     wlan = network.WLAN(network.STA_IF)
     wlan.active(True)
 
-    if not wlan.isconnected():
-        print("connecting to network...")
-        wlan.connect(ssid, key)
+    available = wlan.scan()
+    ssids = {ap[0].decode() for ap in available}
 
-        i = 0
-        while not wlan.isconnected() and i <= CONNECTION_TIMEOUT // 2:
-            sleep(500)
-            i += 1
+    for connection in connections:
+        if connection["SSID"] in ssids:
+            print("Connecting to", connection["SSID"])
+            wlan.connect(connection["SSID"], connection["KEY"])
 
-    print("(IP, NM, GW, DNS):", wlan.ifconfig())
+            i = 0
+            while not wlan.isconnected():
+                if i >= CONNECTION_TIMEOUT * 2:
+                    return None
 
-    ntptime.settime()
-    print(RTC().datetime())
+                sleep(500)
+                i += 1
 
-    ip = wlan.ifconfig()[0]
-    last = ip.split(".")[-1]
-    for _ in range(2):
-        for i in [int(n) for n in last]:
-            blink(led, i, 150)
-            sleep(500)
+            print("(IP, NM, GW, DNS):", wlan.ifconfig())
+
+            ntptime.settime()
+            print(RTC().datetime())
+
+            ip = wlan.ifconfig()[0]
+            last = ip.split(".")[-1]
+            seq_blink(led, last, 200, 500)
+            sleep(5000)
+            seq_blink(led, last, 200, 500)
+
+            return wlan
+
+    return None
+
+
+if __name__ == "__main__":
+    import json
+
+    with open("config.json") as f:
+        config = json.load(f)
+
+    webrepl.start()
+
+    led = Pin(15, Pin.OUT)
+    blink(led, 3, 80)
+
+    wlan = start_network(config["Connections"])
+
+    if wlan is None:
+        print("Failed to connect to any network")
+        seq_blink(led, "404", 200, 500)
         sleep(5000)
-
-
-with open("config.txt") as f:
-    content = f.readlines()
-
-    config = {k.strip(): v.strip() for k, v in [line.split(":") for line in content]}
-    del content
-
-
-blink(led, 3, 100)
-do_connect(config["SSID"], config["KEY"])
+        seq_blink(led, "404", 200, 500)
