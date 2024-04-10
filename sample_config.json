@@ -1,0 +1,12 @@
+{
+  "Connections": [
+    {
+      "SSID": "SSID1",
+      "KEY": "KEY1"
+    },
+    {
+      "SSID": "SSID2",
+      "KEY": "KEY2"
+    }
+  ]
+}
