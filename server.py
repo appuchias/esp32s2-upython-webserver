@@ -70,11 +70,11 @@ def reply(conn):
     head = method == "HEAD"
 
     # Check if the file exists
-    file_path = "/" + path[1:]
+    # file_path = "/" + path[1:]
     # if not os.path.isfile(file_path):
     #     return raise_error(404)
     try:
-        with open(file_path, "rb") as f:
+        with open(path, "rb") as f:
             pass
     except OSError:
         return raise_error(404)
@@ -85,10 +85,10 @@ def reply(conn):
 
     # Read file (text or binary)
     if mime.split("/")[0] == "text":
-        with open(file_path, "r") as f:
+        with open(path, "r") as f:
             message = f.read()
     else:
-        with open(file_path, "rb") as f:
+        with open(path, "rb") as f:
             message = f.read()
 
     # Create response headers

@@ -41,10 +41,15 @@ def start_network(connections):
             i = 0
             while not wlan.isconnected():
                 if i >= CONNECTION_TIMEOUT * 2:
-                    return None
+                    continue
 
                 sleep(500)
                 i += 1
+
+            if not wlan.isconnected():
+                print("Connection failed")
+                wlan.disconnect()
+                continue
 
             print("(IP, NM, GW, DNS):", wlan.ifconfig())
 
