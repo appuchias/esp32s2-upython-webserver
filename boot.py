@@ -1,9 +1,7 @@
+from machine import Pin
 from time import sleep_ms as sleep
 
-import network
-import ntptime
-import webrepl
-from machine import RTC, Pin
+import gc, network, ntptime, webrepl
 
 CONNECTION_TIMEOUT = 30  # seconds
 
@@ -51,13 +49,13 @@ def start_network(connections):
             print("(IP, NM, GW, DNS):", wlan.ifconfig())
 
             ntptime.settime()
-            print(RTC().datetime())
+            # print(RTC().datetime())
 
             ip = wlan.ifconfig()[0]
             last = ip.split(".")[-1]
             seq_blink(led, last, 200, 500)
-            sleep(5000)
-            seq_blink(led, last, 200, 500)
+            # sleep(5000)
+            # seq_blink(led, last, 200, 500)
 
             return wlan
 
@@ -80,5 +78,8 @@ if __name__ == "__main__":
     if wlan is None:
         print("Failed to connect to any network")
         seq_blink(led, "404", 200, 500)
-        sleep(5000)
-        seq_blink(led, "404", 200, 500)
+        # sleep(5000)
+        # seq_blink(led, "404", 200, 500)
+
+    gc.collect()
+    print(f"Python//Free: {gc.mem_alloc()/1000:.3f}kB//{gc.mem_free()/1000:.3f}kB")
